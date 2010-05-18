@@ -1,0 +1,604 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}
+  \setbeamercovered{transparent}
+}
+
+
+\usepackage[spanish]{babel}
+
+\usepackage[latin1]{inputenc}
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+
+\usepackage{wrapfig}
+
+% Or whatever. Note that the encoding and the font should match. If T1
+% does not look nice, try deleting the line with the fontenc.
+
+
+\title[Tesis de Máster] % (optional, use only with long paper titles)
+{Desarrollo de un entorno de computacion distribuido basado en servicios
+virtuales}
+
+\subtitle{}
+
+\author[A. López García] % (optional, use only with lots of authors)
+{Álvaro López García \inst{1}}
+% - Give the names in the same order as the appear in the paper.
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+\institute[aa] % (optional, but mostly needed)
+{
+  \inst{1}%
+  Instituto de Física de Cantabria - CSIC-UC\\
+  Grupo de computación distribuida y Grid}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date[] % (optional, should be abbreviation of conference name)
+{Facultad de Ciencias\\
+Tesis de Máster\\
+Máster en Computación}
+
+% - Either use conference name or its abbreviation.
+% - Not really informative to the audience, more for people (including
+%   yourself) who are reading the slides online
+
+\subject{}
+% This is only inserted into the PDF information catalog. Can be left
+% out. 
+
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+\pgfdeclareimage[height=0.5cm]{ifca-logo}{images/IFCAlogo}
+\pgfdeclareimage[height=0.5cm]{uc-logo}{images/UNICANlogo}
+\pgfdeclareimage[height=0.5cm]{csic-logo}{images/csic}
+
+\logo{
+    \pgfuseimage{uc-logo}
+    \pgfuseimage{ifca-logo}
+    \pgfuseimage{csic-logo}
+    \vspace{-5pt}
+}
+
+\def\colorize<#1>{
+    \temporal<#1>
+        {\color{black!50}}
+        {\color{red!50}}
+        {\color{black!50}}
+}
+
+\setbeamertemplate{navigation symbols}{} %no nav symbols
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+\AtBeginSubsection[]
+{
+  \begin{frame}<beamer>{Esquema}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+}
+
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command: 
+
+%\beamerdefaultoverlayspecification{<+->}
+
+
+\begin{document}
+
+\usebackgroundtemplate{\includegraphics[height=\paperheight]{images/csic_fondo.png}}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Esquema}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+
+\section{Antecedentes}
+
+\subsection{e-Ciencia y Grid}
+
+\begin{frame}{e-Ciencia y Grid}{e-Ciencia}
+    \begin{verse}
+        <<e-Science is about global collaboration in key areas of Science and
+        the next generation of infrastructure that will enable it>> -- Dr.
+        John Taylor.\footnote{miembro de la \emph{UK Office of Science and
+        Technology}}
+    \end{verse}
+    \begin{itemize}
+        \item Término surgido a raiz de los avances en las comunicaciones entre
+        computadores.
+        \item Nuevos modelos de colaboración científica a nivel mundial.
+        \item La realización de la e-Ciencia más concreta es el Grid.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{e-Ciencia y Grid}{Grid}
+    \begin{itemize}
+        \item Nuevo modelo de computación inspirado en el funcionamiento de la red eléctrica.
+        \begin{itemize}
+            \item Agregación de un número indeterminado de recursos heterogéneos.
+            \item Políticas de acceso seguro.
+            \item Utilización eficiente.
+            \item Uso de estándares abiertos.
+            \item Acceso transparente para los usuarios.
+        \end{itemize}
+        \item Amplia utilización en entornos científicos.
+        \item Fomenta la colaboración.
+        \item Permite abordar grandes problemas computacionales.
+        \item Se utiliza un software de \emph{middleware} (Globus,
+        Condor, \textbf{gLite}...)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{e-Ciencia y Grid}{Componentes Grid}
+    \begin{columns}
+        \column{.5 \textwidth} {
+            \small
+            Se basa en la agregación de servicios. Dentro de las
+            infraestructuras basadas en gLite se
+            encuentran.
+            \begin{description}[CE]
+                \tiny
+                \item[UI] User Interface. Nodo a través del que un usuario
+                envía un trabajo al Grid.
+                \item[RB] Resource Broker o WMS (Workload Management System).
+                Encargado de distribuir los trabajos enviados a los diferentes
+                nodos. Formado a su vez por el Network Server, el WMS, Job
+                Controller y Match Maker (pueden estar el el mismo servidor o en
+                diferentes).
+                \item[IS] Information System. Sistema que agrega la información
+                de los diferentes nodos Grid.
+                \item[CE] Computing Element. Interfaz de un nodo Grid con el
+                resto de la infraestructura. Distribuye los trabajos que
+                lleguen a un Batch System local.
+                \item[WN] Worker Node. Los nodos de cálculo del Batch System
+                de un sitio Grid.
+                \item[SE] Storage Element. Elemento encargado del
+                almacenamiento y réplica de los datos.
+            \end{description}
+        }
+        \column{.6 \textwidth} {
+            \includegraphics[height=120pt]{images/schema}
+        }
+    \end{columns}
+\end{frame}
+
+\subsection{Disponibilidad de servicios}
+
+\begin{frame}{Disponibilidad de servicios}{Problemática}
+    \begin{itemize}
+        \item Dentro de la computación Grid ciertos componentes son críticos.
+        \item Un fallo de estos puede tener consecuencias para el resto de la
+        infraestructura y sus usuarios.
+        \item Existen diferentes parámetros que afectan a la disponibilidad.
+            \begin{description}[Disponibilidad]
+            \item[MTBF] Tiempo medio entre fallos.
+            \item[MTTR] Tiempo medio de recuperación.
+            \item[Disponibilidad] $d = \frac{MTBF}{MTBF+MTTR}$
+            \end{description}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Disponibilidad de servicios}{Diagramas de la bañera}
+    Hardware.
+
+    \begin{columns}
+        \column{.3 \textwidth} {
+            \includegraphics[height=80pt]{images/bathtub}
+        }
+        \column{.7 \textwidth} {
+            \begin{description}[Mortalidad temprana]
+                \tiny
+                \item[Mortalidad temprana]<2-> Inicio del uso de un componente. Se
+                detectan componentes defectuosos y se sustituyen.
+                \pause
+                \item[Vida útil]<3-> Período de uso en que el MTBF es aplicable y
+                predecible.
+                \pause
+                \item[Agotamiento]<4-> La vida útil ha finalizado y la tasa de
+                fallos aumenta.
+            \end{description}
+        }
+    \end{columns}
+
+    \vspace{0.2cm}
+    Software.
+
+    \begin{columns}
+        \column{.3 \textwidth} {
+            \includegraphics[height=80pt]{images/bathtub2}
+        }
+        \column{.7 \textwidth} {
+            \begin{description}[Test y validación]
+                \tiny
+                \item[Test e integración]<5-> Etapas tempranas de un desarrollo.
+                Se detectan los errores (\emph{bugs}) y se solucionan.
+                \pause
+                \item[Vida útil]<6-> Se continuan elimnando errores, pero su tasa
+                de aparición es menor.
+                \pause
+                \item[Obsolescencia]<7-> El software está obsoleto y se deja de
+                utilizar. Los fallos que aparecen disminuyen.
+            \end{description}
+        }
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Disponibilidad de servicios}{Recuperación}
+    \begin{itemize}
+        \item El tiempo de recuperación se conoce como MTTR.
+        \item Transcurre desde que el fallo se produce (no desde que se
+        detecta) hasta que se soluciona.
+        \item No es lo mismo recuperarse de un fallo hardware que de un fallo
+        software.
+        \item Es el parámetro de la disponibilidad más reducible.
+        \begin{itemize}
+            \item Mediante hardware redundante.
+            \item Mediante la realización de backups, snapshots, etc.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\subsection{Virtualización}
+
+\begin{frame}{Virtualización}{}
+    \begin{itemize}
+        \item Técnología que permite la creación de diferentes ambientes de
+        ejecución --llamados máquinas virtuales-- dentro de una máquina dada
+        --llamada máquina física--, mediante el uso de un software específico
+        --VMM o hypervisor--.
+        \begin{itemize}
+            \item Independientes entre sí.
+            \item Encapsulados y seguros. 
+        \end{itemize}
+        \item Separación entre máquinas virtuales y físicas.
+        \item Diferentes tecnologías: A nivel de SO, completa, hardware,
+        \emph{paravirtualización}.
+        \item Según la técnica utilizada habrá una pérdida de rendimiento
+        mayor o menor.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Virtualización}{Paravirtualización}
+    \begin{figure}
+        \vspace{-20pt}
+        \centering
+        \includegraphics[height=120pt]{images/comparison.png}
+        \vspace{-25pt}
+    \end{figure}
+    \begin{itemize}
+        \item Permite rendimientos cercanos al SO nativo.
+        \item Necesita la modificación del SO a virtualizar.
+        \item Implementada por Xen.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Virtualización}{Beneficios}
+    Algunos de los beneficios de la virtualización:
+    \begin{description}[separacion maquina real virtual]
+        \small
+        \item[Consolidación de servidores] {Varias máquinas virtuales por
+        máquina física.}
+        \pause
+        \item[Separación máquina real/virtual] Una máquina virtual se puede
+        ejecutar en cualquier máquina física sin necesidad de modificaciones.
+        \pause
+        \item[Migración y balanceo] Se pueden migrar las máquinas a servidores
+        menos sobrecargados.
+        \pause
+        \item[Clonación y snapshotting] Permite la vuelta hacia atrás en caso
+        de fallo. Útil para hacer frente a fallos de software.
+        \pause
+        \item[Rapidez de despliegue] La creación de nuevas máquinas virtuales
+        es trivial.
+    \end{description}
+\end{frame}
+
+\section{Motivación}
+  \begin{frame}<beamer>{Esquema}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+
+\subsection{}
+\begin{frame}{Motivación}{}
+    \begin{itemize}
+        \item El número de máquinas virtualizadas dentro del IFCA es cada vez
+        mayor.
+        \pause
+        \item El instituto alberga diferentes servicios de proyectos Grid
+        Europeos, algunos de los cuales se han virtualizado.
+        \pause
+        \item No solo hay que hacer frente a fallos hardware, sino que existen
+        componentes software que es necesario actualizar y no son todo lo
+        estables que deberían.
+        \pause
+        \item Se pueden aprovechar las ventajas de la virtualización para
+        obtener un sistema más tolerante a fallos.
+    \end{itemize}
+\end{frame}
+
+\section{Solución}
+
+\subsection{Concepto}
+
+\begin{frame}{Solución}{Concepto}
+    \begin{itemize}
+        \item Las máquinas que proveen los servicios Grid serán virtualizadas.
+        \begin{itemize}
+            \colorize<2> \item<2-> Componente de virtualización.
+        \end{itemize}
+        \item Las imágenes de disco de dichas máquinas virtuales se
+        almacenarán remotamente, utilizando herramientas que permitan la
+        creación de snapshots.
+        \begin{itemize}
+            \colorize<3> \item<3-> Componente de almacenamiento.
+        \end{itemize}
+        \item Un software supervisa el buen funcionamiento de la
+        infraestructura.
+        \begin{itemize}
+            \colorize<4> \item<4-> Componente de monitorización.
+        \end{itemize}
+    \end{itemize}
+    Ante el fallo de un servidor de
+    virtualización es capaz de recuperar sus máquinas virtuales en el resto de
+    servidores definidos. Además, provee de las herramientas necesarias para
+    hacer frente a fallos de naturaleza software, mediante la utilización de
+    snapshots.
+\end{frame}
+
+\begin{frame}[label=disenio]{Solución}{Diseño}
+    \begin{figure}
+    \vspace{-20pt}
+    \centering
+    \includegraphics[height=180pt]{images/disenio.png}
+    \end{figure}
+\end{frame}
+
+\subsection{Componentes}
+
+\subsubsection{Virtualización}
+
+\begin{frame}{Virtualización}{}
+    \begin{itemize}
+        \item Las máquinas proveedoras de servicios se ejecutarán
+        virtualizadas.
+        \item Dos subcomponentes: hypervisor y capa de gestión.
+    \end{itemize}
+    \begin{columns}[t]
+        \column{.5 \textwidth} {
+        \textbf{hypervisor}
+        \begin{itemize}
+            \item Es el software de virtualizacion utilizado.
+            \item Las pruebas y el diseño se han realizado con \alert{Xen}.
+        \end{itemize}
+        }
+        \column{.5 \textwidth} {
+        \textbf{Gestión}
+        \begin{itemize}
+            \item Para no depender de un hypervisor específico.
+            \item Traduce llamadas genéricas a llamadas específicas de un
+            hypervisor.
+            \item \alert{libvirt}
+        \end{itemize}
+        }
+    \end{columns}
+\end{frame}
+
+\subsubsection{Almacenamiento}
+\begin{frame}{Almacenamiento}
+    \begin{itemize}
+        \item Componente donde se almacenan las imágenes de disco de las
+        máquinas virtuales.
+        \item Accesible por todos los servidores de virtualización a través de
+        una red de comunicaciones.
+        \item Capacidad para realizar snapshots y/o clonaciones.
+        \item Redundante y fiable.
+        \item Dos subcomponentes:
+            \begin{description}[frontend]
+                \item[frontend] Hace accesibles las imágenes a los servidores
+                (\alert{iSCSI}, AoE, FC, etc.).
+                \item[backend] Proporciona la redundancia y el resto de
+                funcionalidades (LVM, \alert{ZFS}, GPFS, etc.).
+            \end{description}
+    \end{itemize}
+\end{frame}
+
+\subsubsection{Monitorización y Gestión}
+\begin{frame}{Monitorización y gestión}{Esquema}
+  \begin{columns}
+    \column{.40 \textwidth} {
+        Partes
+        \begin{itemize}
+            \item Monitorización.
+            \item Manejador de alertas.
+            \item Software de control.
+            \item Gestor
+                \begin{itemize}
+                    \item virtualización.
+                    \item almacenamiento.
+                \end{itemize}
+            \item Consola.
+        \end{itemize}
+    }
+    \column{.7 \textwidth} {
+        \hspace{-30pt}
+        \begin{figure}
+            \centering
+            \includegraphics[height=110pt]{images/disenio-mon.png}
+        \end{figure}
+    }
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Monitorización y gestión}{Monitorización y alertas}
+    \begin{description}[Monitorizacion]
+        \item[Monitorización]
+            \begin{itemize}
+                \item Cualquier software de monitorización que permita gestionar
+                alertas.
+                \item El SW utilizado ha sido GNU/MON.
+                \begin{itemize}
+                    \item \emph{Plattform Agnostic}.
+                    \item Diseño modular, permite definir monitores de forma sencilla.
+                    \item Alertas asociadas a monitores.
+                \end{itemize}
+            \end{itemize}
+        \item[Alertas]
+            \begin{itemize}
+                \item Manejador que recoge las alertas producidas por la
+                monitorización y las pasa al SW de control.
+                \item Independiente del SW utilizado.
+            \end{itemize}
+    \end{description}
+\end{frame}
+
+\begin{frame}{Monitorización y gestión}{Software de control}
+    \begin{itemize}
+        \item Gestiona las alertas que recibe del manejador o de la consola.
+        \item Guarda el estado actual y pasado del sistema.
+        \item Se encarga de la toma de decisiones ante un fallo de una máquina
+        fisica o virtual, utilizando los gestores de virtualización y
+        almacenamiento.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Monitorización y gestión}{Gestores}
+    \begin{description}[Almacenamiento]
+        \item[Virtualización]
+            \begin{itemize}
+                \item libvirt.
+            \end{itemize}
+        \item[Almacenamiento]
+            \begin{itemize}
+                \item Gestor que maneja de forma remota el almacenamiento.
+                \item Realiza los snapshots, clonaciones, borrados, etc.
+                \item Dependiente tanto del frontend como del backend.
+            \end{itemize}
+    \end{description}
+\end{frame}
+
+\subsection{Funcionamiento}
+
+\againframe{disenio}
+
+\begin{frame}{Funcionamiento}{Fallo de máquina física}
+    \begin{enumerate}
+        \item MON detecta el fallo a través de un monitor y lanza una alerta.
+        \pause
+        \item El manejador pasa la alerta al programa de control.
+        \pause
+        \item Éste comprueba que la alerta no esté duplicada y:
+        \pause
+            \begin{enumerate}
+                \item Busca que máquinas virtuales se estaban ejecutando.
+                \pause
+                \item Ordena al almacenamiento realizar un snapshot de las
+                mismas.
+                \pause
+                \item Busca los servidores de virtualización disponibles.
+                \pause
+                \item Lanza las máquinas en ellos.
+            \end{enumerate}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Funcionamiento}{Fallo de máquina virtual}
+    \begin{enumerate}
+        \item MON detecta el fallo de una máquina virtual y lanza una alerta.
+        \pause
+        \item El manejador pasa la alerta al programa de control.
+        \pause
+        \item Éste comprueba que la alerta no esté duplicada y:
+        \pause
+            \begin{enumerate}
+                \item Comprueba su máquina física. En caso de que falle lo 
+                gestiona.
+                \pause
+                \item Reinicia la máquina virtual.
+                \pause
+                \item Si la máquina se recupera: Avisa a los administradores.
+                \pause
+                \item Si la máquina falla:
+                \pause
+                \begin{enumerate}
+                    \item Interroga al almacenamiento para ver si hay una
+                    imagen anterior. 
+                    \pause
+                    \item Trata de recuperar con ella.
+                \end{enumerate}
+            \end{enumerate}
+    \end{enumerate}
+\end{frame}
+
+\section*{Resumen}
+
+\begin{frame}{Resumen}
+  \begin{itemize}
+        \item Se ha implementado un sistema que es capaz de hacer frente a fallos
+        hardware de forma autónoma.
+        \item Permite recuperarse ante actualizaciones fallidas.
+        \item Utilizando tecnología ya existente en el instituto.
+        \item Mecanismos para facilitar la recuperación e investigación de los
+        fallos.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Final}
+  \begin{center}
+    \huge
+    ¡Muchas gracias!
+  \end{center}
+\end{frame}
+
+
+
+% All of the following is optional and typically not needed. 
+%\appendix
+%\section<presentation>*{\appendixname}
+%\subsection<presentation>*{For Further Reading}
+%
+%\begin{frame}[allowframebreaks]
+%  \frametitle<presentation>{For Further Reading}
+%    
+%  \begin{thebibliography}{10}
+%    
+%  \beamertemplatebookbibitems
+%  % Start with overview books.
+%
+%  \bibitem{Author1990}
+%    A.~Author.
+%    \newblock {\em Handbook of Everything}.
+%    \newblock Some Press, 1990.
+% 
+%    
+%  \beamertemplatearticlebibitems
+%  % Followed by interesting articles. Keep the list short. 
+%
+%  \bibitem{Someone2000}
+%    S.~Someone.
+%    \newblock On this and that.
+%    \newblock {\em Journal of This and That}, 2(1):50--100,
+%    2000.
+%  \end{thebibliography}
+%\end{frame}
+
+\end{document}
+
+
