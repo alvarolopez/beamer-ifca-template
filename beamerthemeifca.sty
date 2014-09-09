@@ -1,0 +1,29 @@
+\ProvidesPackage{beamerthemeegi}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}
+  \setbeamercovered{transparent}
+}
+
+\pgfdeclareimage[height=1cm]{ifca-logo}{images/IFCAlogo}
+\pgfdeclareimage[height=1cm]{csic-logo}{images/csic}
+\pgfdeclareimage[height=1cm]{uc-logo}{images/UNICANlogo}
+
+\logo{
+    \pgfuseimage{ifca-logo}
+    \pgfuseimage{csic-logo}
+    \pgfuseimage{uc-logo}
+    \vspace{-5pt}
+}
+
+\def\colorize<#1>{
+    \temporal<#1>
+        {\color{black!50}}
+        {\color{red!50}}
+        {\color{black!50}}
+}
+
+\setbeamertemplate{navigation symbols}{} %no nav symbols
+
+\usebackgroundtemplate{\includegraphics[height=\paperheight]{images/csic_fondo.png}}
